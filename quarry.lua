@@ -33,7 +33,7 @@ local MAX_DIG_ATTEMPTS = 30
 -- ================================================
 
 local BLACKLIST_NAMESPACES = {
-    "minecolonies:",
+    
 }
 
 -- Optional additional protected blocks.
