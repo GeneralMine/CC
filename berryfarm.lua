@@ -21,17 +21,25 @@ local function sleepMove()
     sleep(MOVE_DELAY)
 end
 
+
 local function harvest()
-    -- Check block to the right
-    local success, data = turtle.inspectRight()
+    -- Turn right to face the berry bushes
+    turtle.turnRight()
+
+    -- Inspect the block in front
+    local success, data = turtle.inspect()
 
     if success and data.name == "minecraft:sweet_berry_bush" then
-        -- Harvest only mature bushes (age 3)
+        -- Harvest only fully grown bushes
         if data.state and tonumber(data.state.age) == 3 then
-            turtle.digRight()
+            turtle.dig()
         end
     end
+
+    -- Face the original direction again
+    turtle.turnLeft()
 end
+
 
 local function moveForward()
     while not turtle.forward() do
@@ -113,6 +121,7 @@ local function farm()
     -- Store harvested berries
     depositAndRefuel()
 end
+
 
 while true do
     farm()
