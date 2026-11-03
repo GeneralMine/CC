@@ -35,19 +35,17 @@ local function harvest()
     if success and data.name == "minecraft:sweet_berry_bush" then
         local age = tonumber(data.state.age)
 
-        -- Age 2 and 3 are harvestable
-        if age and age >= 2 then
-            turtle.select(INTERACTION_SLOT)
+    -- Age 2 and 3 are harvestable
+        turtle.select(INTERACTION_SLOT)
 
-            -- Right-click interaction without breaking the bush
-            local harvested = turtle.place()
+        -- Right-click interaction without breaking the bush
+        local harvested = turtle.place()
 
-            if harvested then
-                sleep(0.3)
+        if harvested then
+            sleep(0.3)
 
-                -- Collect dropped berries
-                turtle.suck()
-            end
+            -- Collect dropped berries
+            turtle.suck()
         end
     end
 
@@ -58,7 +56,23 @@ end
 
 
 local function moveForward()
-    while not turtle.forward() do
+    while true do
+        local fuelLevel = turtle.getFuelLevel()
+        if fuelLevel ~= "unlimited" and fuelLevel < 1 then
+            if turtle.getItemCount(fuelSlot) == 0 then
+                error("Out of fuel and fuel slot " .. fuelSlot .. " is empty.")
+            end
+
+            turtle.select(fuelSlot)
+            if not turtle.refuel(1) then
+                error("Out of fuel and the item in slot " .. fuelSlot .. " is not valid fuel.")
+            end
+        end
+
+        if turtle.forward() then
+            break
+        end
+
         turtle.dig()
         sleep(0.5)
     end
@@ -75,38 +89,48 @@ local function depositAndRefuel()
     -- Face the chest behind the turtle
     turnAround()
 
+    local hasFuel = false
+    if turtle.getItemCount(fuelSlot) > 0 then
+        turtle.select(fuelSlot)
+        hasFuel = turtle.refuel(0)
+    end
+
     -- Deposit harvested berries
     for slot = 2, 16 do
-        turtle.select(slot)
-        turtle.drop()
+        if slot ~= fuelSlot or not hasFuel then
+            turtle.select(slot)
+            turtle.drop()
+        end
     end
 
     -- Refuel from chest
     if turtle.getFuelLevel() ~= "unlimited" then
 
-        -- Find an empty inventory slot
-
-        for slot = 2, 16 do
-            if turtle.getItemCount(slot) == 0 then
-                fuelSlot = slot
-                break
+        if not hasFuel then
+            -- Find an empty inventory slot
+            for slot = 2, 16 do
+                if turtle.getItemCount(slot) == 0 then
+                    fuelSlot = slot
+                    break
+                end
             end
         end
 
         -- Take fuel from chest
         turtle.select(fuelSlot)
 
-        if turtle.suck() then
+        if turtle.getItemCount(fuelSlot) > 0 or turtle.suck() then
             -- Consume fuel until full or stack is empty
             turtle.refuel(0)
 
             while turtle.getFuelLevel() < turtle.getFuelLimit()
               and turtle.getItemCount(fuelSlot) > 0 do
-                turtle.refuel(1)
+                if not turtle.refuel(1) then
+                    error("The item in fuel slot " .. fuelSlot .. " is not valid fuel.")
+                end
             end
 
-            -- Return unused fuel to chest
-            turtle.drop()
+            -- Keep unused fuel in the slot for movement fuel checks.
         end
     end
 
