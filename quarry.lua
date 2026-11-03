@@ -1,3 +1,6 @@
+-- ================================================
+-- wget https://raw.githubusercontent.com/GeneralMine/CC/main/quarry.lua
+-- ================================================
 
 -- ================================================
 -- CC:Tweaked - Optimised 3D Quarry
