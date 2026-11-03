@@ -29,6 +29,54 @@ local INVENTORY_RESERVE = 3
 local MAX_DIG_ATTEMPTS = 30
 
 -- ================================================
+-- PROTECTED BLOCKS
+-- ================================================
+
+local BLACKLIST_NAMESPACES = {
+    "minecolonies:",
+}
+
+-- Optional additional protected blocks.
+local BLACKLIST_BLOCKS = {
+    -- "minecraft:chest",
+    -- "minecraft:barrel",
+}
+
+local function isBlacklisted(blockName)
+    if not blockName then
+        return false
+    end
+
+    for _, namespace in ipairs(BLACKLIST_NAMESPACES) do
+        if string.sub(blockName, 1, #namespace) == namespace then
+            return true
+        end
+    end
+
+    for _, block in ipairs(BLACKLIST_BLOCKS) do
+        if blockName == block then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function checkProtected(inspectFunction, position)
+    local detected, block = inspectFunction()
+
+    if detected and isBlacklisted(block.name) then
+        error(
+            "PROTECTED BLOCK DETECTED at "
+            .. position .. ": " .. block.name
+            .. "\nQuarry stopped to protect MineColonies."
+        )
+    end
+
+    return detected
+end
+
+-- ================================================
 -- POSITION TRACKING
 -- ================================================
 
@@ -213,7 +261,8 @@ local function checkChest()
     local name = data.name or ""
 
     if not string.find(name, "chest", 1, true)
-        and not string.find(name, "barrel", 1, true) then
+        and not string.find(name, "barrel", 1, true) 
+        and not string.find(name, "backpack", 1, true) then
         error("Block behind turtle is not a chest or barrel!")
     end
 end
@@ -265,14 +314,21 @@ local function moveForwardRaw()
         attempts = attempts + 1
 
         if turtle.detect() then
+
+            checkProtected(
+                turtle.inspect,
+                x .. "," .. y .. "," .. z
+            )
+
             turtle.dig()
+
         else
             turtle.attack()
             sleep(0.2)
         end
 
         if attempts >= MAX_DIG_ATTEMPTS then
-            error("Cannot move forward. Obstruction or unbreakable block.")
+            error("Cannot move forward. Obstruction.")
         end
     end
 
@@ -290,14 +346,21 @@ local function moveUpRaw()
         attempts = attempts + 1
 
         if turtle.detectUp() then
+
+            checkProtected(
+                turtle.inspectUp,
+                x .. "," .. (y + 1) .. "," .. z
+            )
+
             turtle.digUp()
+
         else
             turtle.attackUp()
             sleep(0.2)
         end
 
         if attempts >= MAX_DIG_ATTEMPTS then
-            error("Cannot move up. Obstruction or unbreakable block.")
+            error("Cannot move up. Obstruction.")
         end
     end
 
@@ -311,14 +374,21 @@ local function moveDownRaw()
         attempts = attempts + 1
 
         if turtle.detectDown() then
+
+            checkProtected(
+                turtle.inspectDown,
+                x .. "," .. (y - 1) .. "," .. z
+            )
+
             turtle.digDown()
+
         else
             turtle.attackDown()
             sleep(0.2)
         end
 
         if attempts >= MAX_DIG_ATTEMPTS then
-            error("Cannot move down. Obstruction or unbreakable block.")
+            error("Cannot move down. Obstruction.")
         end
     end
 
