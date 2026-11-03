@@ -10,6 +10,10 @@
 local LENGTH = 8
 local MOVE_DELAY = 2
 
+local INTERACTION_SLOT = 1
+local fuelSlot = 16
+
+
 -- Direction: bushes are to the right of the turtle
 -- Chest is behind the starting position
 -- C                  <- Chest at starting position
@@ -23,22 +27,34 @@ end
 
 
 local function harvest()
-    -- Turn right to face the berry bushes
+    -- Face the berry bush
     turtle.turnRight()
 
-    -- Inspect the block in front
     local success, data = turtle.inspect()
 
     if success and data.name == "minecraft:sweet_berry_bush" then
-        -- Harvest only fully grown bushes
-        if data.state and tonumber(data.state.age) == 3 then
-            turtle.dig()
+        local age = tonumber(data.state.age)
+
+        -- Age 2 and 3 are harvestable
+        if age and age >= 2 then
+            turtle.select(INTERACTION_SLOT)
+
+            -- Right-click interaction without breaking the bush
+            local harvested = turtle.place()
+
+            if harvested then
+                sleep(0.3)
+
+                -- Collect dropped berries
+                turtle.suck()
+            end
         end
     end
 
-    -- Face the original direction again
+    -- Restore original direction
     turtle.turnLeft()
 end
+
 
 
 local function moveForward()
@@ -60,7 +76,7 @@ local function depositAndRefuel()
     turnAround()
 
     -- Deposit harvested berries
-    for slot = 1, 16 do
+    for slot = 2, 16 do
         turtle.select(slot)
         turtle.drop()
     end
@@ -69,9 +85,8 @@ local function depositAndRefuel()
     if turtle.getFuelLevel() ~= "unlimited" then
 
         -- Find an empty inventory slot
-        local fuelSlot = 16
 
-        for slot = 1, 16 do
+        for slot = 2, 16 do
             if turtle.getItemCount(slot) == 0 then
                 fuelSlot = slot
                 break
